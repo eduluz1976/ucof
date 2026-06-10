@@ -77,6 +77,7 @@ Key attributes:
 - `requirementId` — globally unique identifier (e.g., `iso27001:2022/A.8.8`)
 - `normRef` — pointer to source norm and clause
 - `obligationLevel` — `{SHALL, SHOULD, MAY}`
+- `requirementSource` — `{Normative, Customer, Regulatory, Contractual, InternalPolicy}`
 - `requirementText` — canonical text from the standard
 - `applicabilityCondition` — optional; describes when this requirement applies
 - `tags` — free-form semantic labels for cross-norm mapping
@@ -130,6 +131,25 @@ Key attributes:
 - `linkedControl` — treatment measure (a Control)
 - `residualRiskScore` — post-treatment assessment
 
+#### `RiskAndOpportunityItem`
+A planning record used to model risk-based thinking as a combined evaluation of downside risk and upside opportunity.
+
+Key attributes:
+- `raoId`
+- `description`
+- `linkedRisk` — reference to a `RiskItem`
+- `linkedOpportunity` — reference to an `OpportunityItem`
+- `planningContext` — process, objective, project, or change context
+
+#### `OpportunityItem`
+A potential condition or action that can improve outcomes, resilience, quality, or efficiency.
+
+Key attributes:
+- `opportunityId`
+- `description`
+- `expectedBenefit`
+- `linkedControl`
+
 #### `Asset`
 Anything of value to the organization that a norm requires to be identified and protected.
 
@@ -177,9 +197,9 @@ Key attributes:
 
 Each norm loaded into the system can extend these primitives with additional attributes or introduce subtype hierarchies. Extensions are additive — they never modify universal primitive definitions.
 
-Example: ISO 27001 introduces `StatementOfApplicability` (a structured list of all Annex A controls with inclusion/exclusion justification). This is modeled as a specialization of a `ControlSelectionDocument`, itself a type of Evidence, registered as an ISO 27001 extension.
+Example: `StatementOfApplicability` (a structured list of selected controls with inclusion/exclusion justification) is modeled as a specialization of `ControlSelectionDocument`, itself a type of Evidence. Although commonly used for ISO 27001, the pattern is reusable by other norms that require control applicability/selection registers.
 
-Example: ISO 42001 introduces `AISystemRecord`, `AIImpactAssessment`, and `BiasRiskItem` (a subtype of RiskItem with AI-specific attributes). These are registered by the ISO 42001 norm pack.
+Example: ISO 42001 introduces `AISystemRecord`, `AIImpactAssessment` (modeled under `RiskAssessment`, and usable via a `RiskAssessment` alias in AI contexts), and `BiasRisk` (a subtype of `RiskItem` with AI-specific attributes). These are registered by the ISO 42001 norm pack.
 
 ---
 
@@ -193,9 +213,9 @@ This section maps each target standard to the ontology primitives it primarily e
 |---|---|
 | Quality policy | Control (type: Policy) |
 | Quality objectives | OrganizationalGoal (extension of Asset) |
-| Customer requirements | Requirement (tagged: external/customer) |
+| Customer requirements | Requirement (`requirementSource = Customer`) |
 | Process approach | Control (type: Process) + Asset (type: Process) |
-| Risk-based thinking | RiskItem |
+| Risk-based thinking | RiskAndOpportunityItem (links to RiskItem and/or OpportunityItem) |
 | Documented information | Evidence (type: Document) |
 | Internal audit | ReviewCycle (type: InternalAudit) |
 | Management review | ReviewCycle (type: ManagementReview) |
@@ -208,9 +228,9 @@ This section maps each target standard to the ontology primitives it primarily e
 |---|---|
 | Information assets | Asset (type: DataAsset, System) |
 | Information security risk | RiskItem (category: Information Security) |
-| Statement of Applicability | ControlSelectionDocument (Evidence extension) |
+| Statement of Applicability (or equivalent control applicability register) | StatementOfApplicability (specialization of ControlSelectionDocument) |
 | Annex A controls | Control (sourced from ISO 27001 norm pack) |
-| Security incident | NonConformance (severity-tagged) |
+| Security incident | IncidentTrigger (optional escalation to NonConformance + ReviewCycle) |
 | ISMS scope | OrganizationalEntity |
 | Interested parties | Stakeholder (extension of OrganizationalEntity) |
 
@@ -223,11 +243,11 @@ ISO 22989 is the AI vocabulary standard. Its terms are loaded as a **terminology
 | AI system | Asset (type: AIModel) |
 | AI system record | AISystemRecord (Evidence extension) |
 | AI risk assessment | RiskItem (category: AI/ML) |
-| AI impact assessment | AIImpactAssessment (Evidence extension) |
+| AI impact assessment | RiskAssessment (alias: AIImpactAssessment) |
 | AI policy | Control (type: Policy, tagged: AI) |
 | Responsible AI objectives | OrganizationalGoal extension |
-| AI literacy | TrainingRecord (Evidence extension) |
-| Bias and fairness controls | BiasRiskItem + Control |
+| AI literacy | TrainingRecord + CompetenceAssessmentRecord + AwarenessCommunicationRecord (Evidence extensions) |
+| Bias and fairness controls | BiasRisk + Control |
 | Transparency documentation | Evidence (type: Document, tagged: AI-Transparency) |
 | Human oversight controls | Control (type: Process, tagged: AI-Oversight) |
 
@@ -244,7 +264,14 @@ NIST AI RMF is function-based rather than clause-based, organized around four co
 | MAP — Risk identification | RiskItem (category: AI/ML) |
 | MEASURE — Risk analysis metrics | RiskIndicator (Observe namespace) |
 | MEASURE — Testing & evaluation | Evidence (type: TestResult) |
-| MANAGE — Risk treatment | RiskItem.treatmentOption + Control |
-| MANAGE — Incident response | NonConformance + ReviewCycle |
+| MANAGE — Risk treatment and response handling | RiskItem.treatmentOption + Control + Task + MonitoringEvent |
+| MANAGE — Incident escalation (optional) | NonConformance + ReviewCycle |
 
 **Cross-mapping with ISO 42001:** NIST AI RMF and ISO 42001 are highly convergent. The system should auto-generate a cross-mapping report showing which NIST subcategories are addressed by which ISO 42001 clauses, so organizations pursuing both do not implement duplicate controls.
+
+### OpportunityItem Examples
+
+- `ProcessOptimizationOpportunity` — streamline a process to reduce defects and cycle time.
+- `AutomationOpportunity` — automate repetitive controls to improve consistency and evidence quality.
+- `SupplierDiversificationOpportunity` — reduce dependency risk by onboarding alternate qualified suppliers.
+- `CustomerExperienceOpportunity` — improve customer satisfaction through better feedback handling and service reliability.

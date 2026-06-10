@@ -1,0 +1,1391 @@
+@prefix rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:  <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+
+@prefix ucof:     <https://ontology.digitalmosaic.ca/ucof#> .
+@prefix ucof-org: <https://ontology.digitalmosaic.ca/ucof/org#> .
+@prefix ucof-norm: <https://ontology.digitalmosaic.ca/ucof/norm#> .
+@prefix ucof-ctrl: <https://ontology.digitalmosaic.ca/ucof/control#> .
+@prefix ucof-risk: <https://ontology.digitalmosaic.ca/ucof/risk#> .
+@prefix ucof-evid: <https://ontology.digitalmosaic.ca/ucof/evidence#> .
+@prefix ucof-wf:  <https://ontology.digitalmosaic.ca/ucof/workflow#> .
+@prefix ucof-obs: <https://ontology.digitalmosaic.ca/ucof/observe#> .
+
+##############################################################################
+# Ontology Declaration
+##############################################################################
+
+<https://ontology.digitalmosaic.ca/ucof>
+    a owl:Ontology ;
+    dcterms:title "Unified Compliance Ontology Framework (UCOF)" ;
+    dcterms:description """
+        A formal OWL ontology for representing, mapping, and managing compliance
+        requirements across multiple ISO and NIST management system standards.
+        Designed to support the UCOF software platform developed by Digital Mosaic Advisory.
+        Initial norm coverage: ISO 9001, ISO 27001, ISO 42001, ISO 22989, ISO 31000, NIST AI RMF.
+    """ ;
+    dcterms:creator "Digital Mosaic Advisory" ;
+    dcterms:created "2026-06-10"^^xsd:date ;
+    owl:versionInfo "0.1.0" ;
+    owl:versionIRI <https://ontology.digitalmosaic.ca/ucof/0.1.0> .
+
+
+##############################################################################
+# NAMESPACE: ucof (core primitives)
+##############################################################################
+
+#--- Enumerations (as OWL named individuals in SKOS concept schemes) ---------
+
+ucof:ObligationLevel a owl:Class ;
+    rdfs:label "Obligation Level" ;
+    rdfs:comment "Normative force of a requirement: SHALL (mandatory), SHOULD (recommended), MAY (permitted)." ;
+    owl:oneOf ( ucof:SHALL ucof:SHOULD ucof:MAY ) .
+
+ucof:SHALL a owl:NamedIndividual, ucof:ObligationLevel ;
+    rdfs:label "SHALL" ;
+    rdfs:comment "Mandatory normative requirement." .
+
+ucof:SHOULD a owl:NamedIndividual, ucof:ObligationLevel ;
+    rdfs:label "SHOULD" ;
+    rdfs:comment "Recommended but not mandatory." .
+
+ucof:MAY a owl:NamedIndividual, ucof:ObligationLevel ;
+    rdfs:label "MAY" ;
+    rdfs:comment "Permitted but optional." .
+
+# ---- Implementation State --------------------------------------------------
+
+ucof:ImplementationState a owl:Class ;
+    rdfs:label "Implementation State" ;
+    rdfs:comment "Lifecycle state of a control's implementation within an organization." ;
+    owl:oneOf (
+        ucof:NotStarted
+        ucof:InProgress
+        ucof:Implemented
+        ucof:Verified
+        ucof:Deprecated
+    ) .
+
+ucof:NotStarted   a owl:NamedIndividual, ucof:ImplementationState ; rdfs:label "Not Started" .
+ucof:InProgress   a owl:NamedIndividual, ucof:ImplementationState ; rdfs:label "In Progress" .
+ucof:Implemented  a owl:NamedIndividual, ucof:ImplementationState ; rdfs:label "Implemented" .
+ucof:Verified     a owl:NamedIndividual, ucof:ImplementationState ; rdfs:label "Verified" .
+ucof:Deprecated   a owl:NamedIndividual, ucof:ImplementationState ; rdfs:label "Deprecated" .
+
+# ---- Mapping Type ----------------------------------------------------------
+
+ucof:MappingType a owl:Class ;
+    rdfs:label "Mapping Type" ;
+    rdfs:comment "Strength of the relationship between a Control and a Requirement it addresses." ;
+    owl:oneOf ( ucof:FullySatisfies ucof:PartiallySatisfies ucof:Contributes ) .
+
+ucof:FullySatisfies    a owl:NamedIndividual, ucof:MappingType ; rdfs:label "Fully Satisfies" .
+ucof:PartiallySatisfies a owl:NamedIndividual, ucof:MappingType ; rdfs:label "Partially Satisfies" .
+ucof:Contributes       a owl:NamedIndividual, ucof:MappingType ; rdfs:label "Contributes" .
+
+# ---- Severity --------------------------------------------------------------
+
+ucof:Severity a owl:Class ;
+    rdfs:label "Severity" ;
+    owl:oneOf ( ucof:Minor ucof:Major ucof:Critical ) .
+
+ucof:Minor    a owl:NamedIndividual, ucof:Severity ; rdfs:label "Minor" .
+ucof:Major    a owl:NamedIndividual, ucof:Severity ; rdfs:label "Major" .
+ucof:Critical a owl:NamedIndividual, ucof:Severity ; rdfs:label "Critical" .
+
+# ---- Risk Level ------------------------------------------------------------
+
+ucof:RiskLevel a owl:Class ;
+    rdfs:label "Risk Level" ;
+    owl:oneOf ( ucof:VeryLow ucof:Low ucof:Medium ucof:High ucof:VeryHigh ) .
+
+ucof:VeryLow  a owl:NamedIndividual, ucof:RiskLevel ; rdfs:label "Very Low" .
+ucof:Low      a owl:NamedIndividual, ucof:RiskLevel ; rdfs:label "Low" .
+ucof:Medium   a owl:NamedIndividual, ucof:RiskLevel ; rdfs:label "Medium" .
+ucof:High     a owl:NamedIndividual, ucof:RiskLevel ; rdfs:label "High" .
+ucof:VeryHigh a owl:NamedIndividual, ucof:RiskLevel ; rdfs:label "Very High" .
+
+# ---- Treatment Option ------------------------------------------------------
+
+ucof:TreatmentOption a owl:Class ;
+    rdfs:label "Treatment Option" ;
+    rdfs:comment "ISO 31000-aligned risk treatment strategies." ;
+    owl:oneOf ( ucof:Mitigate ucof:Accept ucof:Transfer ucof:Avoid ) .
+
+ucof:Mitigate a owl:NamedIndividual, ucof:TreatmentOption ; rdfs:label "Mitigate" .
+ucof:Accept   a owl:NamedIndividual, ucof:TreatmentOption ; rdfs:label "Accept" .
+ucof:Transfer a owl:NamedIndividual, ucof:TreatmentOption ; rdfs:label "Transfer" .
+ucof:Avoid    a owl:NamedIndividual, ucof:TreatmentOption ; rdfs:label "Avoid" .
+
+# ---- Requirement Source ----------------------------------------------------
+
+ucof:RequirementSource a owl:Class ;
+    rdfs:label "Requirement Source" ;
+    rdfs:comment "Origin of a requirement record, such as a norm clause, customer obligation, regulation, contract, or internal policy." ;
+    owl:oneOf (
+        ucof:Normative
+        ucof:Customer
+        ucof:Regulatory
+        ucof:Contractual
+        ucof:InternalPolicy
+    ) .
+
+ucof:Normative a owl:NamedIndividual, ucof:RequirementSource ; rdfs:label "Normative" .
+ucof:Customer a owl:NamedIndividual, ucof:RequirementSource ; rdfs:label "Customer" .
+ucof:Regulatory a owl:NamedIndividual, ucof:RequirementSource ; rdfs:label "Regulatory" .
+ucof:Contractual a owl:NamedIndividual, ucof:RequirementSource ; rdfs:label "Contractual" .
+ucof:InternalPolicy a owl:NamedIndividual, ucof:RequirementSource ; rdfs:label "Internal Policy" .
+
+
+##############################################################################
+# NAMESPACE: ucof-org  (Organizational Context)
+##############################################################################
+
+ucof-org:OrganizationalEntity a owl:Class ;
+    rdfs:label "Organizational Entity" ;
+    rdfs:comment "A legal entity, business unit, site, department, or product scope boundary within which compliance applies." .
+
+ucof-org:LegalEntity a owl:Class ;
+    rdfs:subClassOf ucof-org:OrganizationalEntity ;
+    rdfs:label "Legal Entity" .
+
+ucof-org:BusinessUnit a owl:Class ;
+    rdfs:subClassOf ucof-org:OrganizationalEntity ;
+    rdfs:label "Business Unit" .
+
+ucof-org:Site a owl:Class ;
+    rdfs:subClassOf ucof-org:OrganizationalEntity ;
+    rdfs:label "Site" .
+
+ucof-org:Department a owl:Class ;
+    rdfs:subClassOf ucof-org:OrganizationalEntity ;
+    rdfs:label "Department" .
+
+ucof-org:ProductScope a owl:Class ;
+    rdfs:subClassOf ucof-org:OrganizationalEntity ;
+    rdfs:label "Product Scope" .
+
+ucof-org:Stakeholder a owl:Class ;
+    rdfs:subClassOf ucof-org:OrganizationalEntity ;
+    rdfs:label "Stakeholder" ;
+    rdfs:comment "An interested party (internal or external) whose needs and expectations are relevant to the management system. Ref: ISO HLS Clause 4.2." .
+
+ucof-org:Role a owl:Class ;
+    rdfs:label "Role" ;
+    rdfs:comment "A named accountability position within the compliance programme (e.g. Compliance Owner, Control Owner, Internal Auditor)." .
+
+ucof-org:ScopeDeclaration a owl:Class ;
+    rdfs:label "Scope Declaration" ;
+    rdfs:comment "A formal record of which norms, entities, systems, and asset classes are in scope for a compliance programme. Ref: ISO HLS Clause 4.3." .
+
+# --- Asset hierarchy --------------------------------------------------------
+
+ucof-org:Asset a owl:Class ;
+    rdfs:label "Asset" ;
+    rdfs:comment "Anything of value to the organization that a norm requires to be identified, classified, and protected." .
+
+ucof-org:OrganizationalGoal a owl:Class ;
+    rdfs:subClassOf ucof-org:Asset ;
+    rdfs:label "Organizational Goal" ;
+    rdfs:comment "A strategic or operational objective used to guide planning, risk treatment, and continual improvement across management systems." .
+
+ucof-org:DataAsset a owl:Class ;
+    rdfs:subClassOf ucof-org:Asset ;
+    rdfs:label "Data Asset" .
+
+ucof-org:PIIDataAsset a owl:Class ;
+    rdfs:subClassOf ucof-org:DataAsset ;
+    rdfs:label "PII Data Asset" ;
+    rdfs:comment "Data asset containing Personally Identifiable Information. Relevant to ISO 27701, GDPR, privacy controls." .
+
+ucof-org:AIModel a owl:Class ;
+    rdfs:subClassOf ucof-org:Asset ;
+    rdfs:label "AI Model" ;
+    rdfs:comment "An AI system or machine learning model subject to ISO 42001 and NIST AI RMF governance." .
+
+ucof-org:Process a owl:Class ;
+    rdfs:subClassOf ucof-org:Asset ;
+    rdfs:label "Process" ;
+    rdfs:comment "An organizational process considered an asset for quality, security, or continuity purposes." .
+
+ucof-org:PhysicalAsset a owl:Class ;
+    rdfs:subClassOf ucof-org:Asset ;
+    rdfs:label "Physical Asset" .
+
+ucof-org:InformationSystem a owl:Class ;
+    rdfs:subClassOf ucof-org:Asset ;
+    rdfs:label "Information System" .
+
+ucof-org:Supplier a owl:Class ;
+    rdfs:subClassOf ucof-org:Asset ;
+    rdfs:label "Supplier" ;
+    rdfs:comment "A third-party supplier or service provider subject to supply chain controls." .
+
+ucof-org:EnvironmentalAspect a owl:Class ;
+    rdfs:subClassOf ucof-org:Asset ;
+    rdfs:label "Environmental Aspect" ;
+    rdfs:comment "An element of an organization's activities that can interact with the environment. ISO 14001 extension." .
+
+# --- Object properties (org) ------------------------------------------------
+
+ucof-org:hasParentEntity a owl:ObjectProperty ;
+    rdfs:domain ucof-org:OrganizationalEntity ;
+    rdfs:range  ucof-org:OrganizationalEntity ;
+    rdfs:label "has parent entity" .
+
+ucof-org:hasApplicableNorm a owl:ObjectProperty ;
+    rdfs:domain ucof-org:OrganizationalEntity ;
+    rdfs:range  ucof-norm:Norm ;
+    rdfs:label "has applicable norm" .
+
+ucof-org:hasAsset a owl:ObjectProperty ;
+    rdfs:domain ucof-org:OrganizationalEntity ;
+    rdfs:range  ucof-org:Asset ;
+    rdfs:label "has asset" .
+
+ucof-org:isOwnedBy a owl:ObjectProperty ;
+    rdfs:domain ucof-org:Asset ;
+    rdfs:range  ucof-org:Role ;
+    rdfs:label "is owned by" .
+
+ucof-org:hasClassification a owl:DatatypeProperty ;
+    rdfs:domain ucof-org:Asset ;
+    rdfs:range  xsd:string ;
+    rdfs:label "has classification" ;
+    rdfs:comment "Sensitivity classification: Public, Internal, Confidential, Restricted." .
+
+ucof-org:hasScopeDeclaration a owl:ObjectProperty ;
+    rdfs:domain ucof-org:OrganizationalEntity ;
+    rdfs:range  ucof-org:ScopeDeclaration ;
+    rdfs:label "has scope declaration" .
+
+
+##############################################################################
+# NAMESPACE: ucof-norm  (Norm Registry)
+##############################################################################
+
+ucof-norm:Norm a owl:Class ;
+    rdfs:label "Norm" ;
+    rdfs:comment "A compliance standard, framework, or regulation loaded into the system (e.g., ISO 27001:2022, NIST AI RMF 1.0)." .
+
+ucof-norm:CertifiableNorm a owl:Class ;
+    rdfs:subClassOf ucof-norm:Norm ;
+    rdfs:label "Certifiable Norm" ;
+    rdfs:comment "A norm for which third-party certification by an accredited body is available (e.g., ISO 9001, ISO 27001, ISO 42001)." .
+
+ucof-norm:GuidanceNorm a owl:Class ;
+    rdfs:subClassOf ucof-norm:Norm ;
+    rdfs:label "Guidance Norm" ;
+    rdfs:comment "A norm that provides guidance or vocabulary without direct certification (e.g., ISO 31000, ISO 22989, NIST AI RMF)." .
+
+ucof-norm:TerminologyNorm a owl:Class ;
+    rdfs:subClassOf ucof-norm:GuidanceNorm ;
+    rdfs:label "Terminology Norm" ;
+    rdfs:comment "A norm providing foundational vocabulary used by other norms (e.g., ISO 22989 for AI terms, ISO 31000 for risk terms)." .
+
+ucof-norm:Clause a owl:Class ;
+    rdfs:label "Clause" ;
+    rdfs:comment "A numbered section within a norm's structure (e.g., ISO 27001 Clause 6.1, ISO 9001 Clause 8.4)." .
+
+ucof-norm:HLSClause a owl:Class ;
+    rdfs:subClassOf ucof-norm:Clause ;
+    rdfs:label "HLS Clause" ;
+    rdfs:comment "A clause belonging to the ISO High Level Structure (Annex SL), shared identically across ISO 9001, 14001, 27001, 45001, 42001, and others. Clauses 4-10." .
+
+ucof-norm:Requirement a owl:Class ;
+    rdfs:label "Requirement" ;
+    rdfs:comment "A normative statement that an organization shall or should satisfy. The smallest addressable unit of a standard." .
+
+ucof-norm:HLSRequirement a owl:Class ;
+    rdfs:subClassOf ucof-norm:Requirement ;
+    rdfs:label "HLS Requirement" ;
+    rdfs:comment "A requirement belonging to the ISO High Level Structure, shared across all HLS-aligned norms. Satisfying this once covers all norms that inherit it." .
+
+ucof-norm:NormExtension a owl:Class ;
+    rdfs:label "Norm Extension" ;
+    rdfs:comment "An additional ontology type, attribute, or relationship introduced by a specific norm pack (e.g., Statement of Applicability for ISO 27001, AI System Record for ISO 42001)." .
+
+ucof-norm:CrossNormMapping a owl:Class ;
+    rdfs:label "Cross-Norm Mapping" ;
+    rdfs:comment "An explicit, reasoned link between requirements from two different norms that address the same underlying concern. The basis for cross-norm consolidation." .
+
+# --- Object properties (norm) -----------------------------------------------
+
+ucof-norm:belongsToNorm a owl:ObjectProperty ;
+    rdfs:domain ucof-norm:Clause ;
+    rdfs:range  ucof-norm:Norm ;
+    rdfs:label "belongs to norm" .
+
+ucof-norm:hasChildClause a owl:ObjectProperty ;
+    rdfs:domain ucof-norm:Clause ;
+    rdfs:range  ucof-norm:Clause ;
+    rdfs:label "has child clause" .
+
+ucof-norm:hasParentClause a owl:ObjectProperty ;
+    owl:inverseOf ucof-norm:hasChildClause ;
+    rdfs:label "has parent clause" .
+
+ucof-norm:derivedFromClause a owl:ObjectProperty ;
+    rdfs:domain ucof-norm:Requirement ;
+    rdfs:range  ucof-norm:Clause ;
+    rdfs:label "derived from clause" .
+
+ucof-norm:hasObligationLevel a owl:ObjectProperty ;
+    rdfs:domain ucof-norm:Requirement ;
+    rdfs:range  ucof:ObligationLevel ;
+    rdfs:label "has obligation level" .
+
+ucof-norm:hasRequirementSource a owl:ObjectProperty ;
+    rdfs:domain ucof-norm:Requirement ;
+    rdfs:range  ucof:RequirementSource ;
+    rdfs:label "has requirement source" .
+
+ucof-norm:supersedes a owl:ObjectProperty ;
+    rdfs:domain ucof-norm:Norm ;
+    rdfs:range  ucof-norm:Norm ;
+    rdfs:label "supersedes" ;
+    rdfs:comment "Links a newer norm version to the older version it replaces." .
+
+ucof-norm:hasDependency a owl:ObjectProperty ;
+    rdfs:domain ucof-norm:Norm ;
+    rdfs:range  ucof-norm:Norm ;
+    rdfs:label "has dependency" ;
+    rdfs:comment "This norm depends on another norm being loaded first (e.g., ISO 42001 depends on ISO 22989 for terminology)." .
+
+ucof-norm:mapsToRequirement a owl:ObjectProperty ;
+    rdfs:domain ucof-norm:CrossNormMapping ;
+    rdfs:range  ucof-norm:Requirement ;
+    rdfs:label "maps to requirement" .
+
+ucof-norm:mapsFromRequirement a owl:ObjectProperty ;
+    rdfs:domain ucof-norm:CrossNormMapping ;
+    rdfs:range  ucof-norm:Requirement ;
+    rdfs:label "maps from requirement" .
+
+# --- Datatype properties (norm) ---------------------------------------------
+
+ucof-norm:normId a owl:DatatypeProperty ;
+    rdfs:domain ucof-norm:Norm ;
+    rdfs:range  xsd:string ;
+    rdfs:label "norm ID" ;
+    rdfs:comment "Machine-readable identifier, e.g. 'iso27001-2022'." .
+
+ucof-norm:normTitle a owl:DatatypeProperty ;
+    rdfs:domain ucof-norm:Norm ;
+    rdfs:range  xsd:string ;
+    rdfs:label "norm title" .
+
+ucof-norm:normVersion a owl:DatatypeProperty ;
+    rdfs:domain ucof-norm:Norm ;
+    rdfs:range  xsd:string ;
+    rdfs:label "norm version" .
+
+ucof-norm:normDomain a owl:DatatypeProperty ;
+    rdfs:domain ucof-norm:Norm ;
+    rdfs:range  xsd:string ;
+    rdfs:label "norm domain" ;
+    rdfs:comment "Primary domain, e.g. 'Quality', 'Information Security', 'AI Governance', 'Risk Management'." .
+
+ucof-norm:clauseId a owl:DatatypeProperty ;
+    rdfs:domain ucof-norm:Clause ;
+    rdfs:range  xsd:string ;
+    rdfs:label "clause ID" ;
+    rdfs:comment "Dot-notation identifier within the norm, e.g. '6.1.2'." .
+
+ucof-norm:clauseTitle a owl:DatatypeProperty ;
+    rdfs:domain ucof-norm:Clause ;
+    rdfs:range  xsd:string ;
+    rdfs:label "clause title" .
+
+ucof-norm:requirementId a owl:DatatypeProperty ;
+    rdfs:domain ucof-norm:Requirement ;
+    rdfs:range  xsd:string ;
+    rdfs:label "requirement ID" ;
+    rdfs:comment "Globally unique identifier, e.g. 'iso27001:2022/6.1.2'." .
+
+ucof-norm:requirementText a owl:DatatypeProperty ;
+    rdfs:domain ucof-norm:Requirement ;
+    rdfs:range  xsd:string ;
+    rdfs:label "requirement text" .
+
+ucof-norm:applicabilityCondition a owl:DatatypeProperty ;
+    rdfs:domain ucof-norm:Requirement ;
+    rdfs:range  xsd:string ;
+    rdfs:label "applicability condition" ;
+    rdfs:comment "Optional condition describing when this requirement applies." .
+
+ucof-norm:mappingRationale a owl:DatatypeProperty ;
+    rdfs:domain ucof-norm:CrossNormMapping ;
+    rdfs:range  xsd:string ;
+    rdfs:label "mapping rationale" .
+
+
+##############################################################################
+# NAMESPACE: ucof-ctrl  (Control Layer)
+##############################################################################
+
+ucof-ctrl:Control a owl:Class ;
+    rdfs:label "Control" ;
+    rdfs:comment "An organizational measure — policy, process, technical safeguard, or behavioral practice — that addresses one or more requirements." .
+
+ucof-ctrl:PolicyControl a owl:Class ;
+    rdfs:subClassOf ucof-ctrl:Control ;
+    rdfs:label "Policy Control" .
+
+ucof-ctrl:ProcessControl a owl:Class ;
+    rdfs:subClassOf ucof-ctrl:Control ;
+    rdfs:label "Process Control" .
+
+ucof-ctrl:TechnicalControl a owl:Class ;
+    rdfs:subClassOf ucof-ctrl:Control ;
+    rdfs:label "Technical Control" .
+
+ucof-ctrl:PhysicalControl a owl:Class ;
+    rdfs:subClassOf ucof-ctrl:Control ;
+    rdfs:label "Physical Control" .
+
+ucof-ctrl:PeopleControl a owl:Class ;
+    rdfs:subClassOf ucof-ctrl:Control ;
+    rdfs:label "People Control" ;
+    rdfs:comment "Controls relating to human behaviour, training, awareness, and competence." .
+
+ucof-ctrl:ControlMapping a owl:Class ;
+    rdfs:label "Control Mapping" ;
+    rdfs:comment "An explicit, validated link between a Control and the Requirement(s) it satisfies. Carries the mapping type and rationale." .
+
+ucof-ctrl:ControlSelectionDocument a owl:Class ;
+    rdfs:subClassOf ucof-evid:Evidence ;
+    rdfs:label "Control Selection Document" ;
+    rdfs:comment "A structured document listing selected and excluded controls with justifications. Reusable by any norm that requires control applicability/selection records." .
+
+ucof-ctrl:StatementOfApplicability a owl:Class ;
+    rdfs:subClassOf ucof-ctrl:ControlSelectionDocument ;
+    rdfs:label "Statement of Applicability" ;
+    rdfs:comment "A control applicability statement listing controls with inclusion/exclusion rationale. Common in ISO/IEC 27001 and reusable by other norms with similar control-selection requirements." .
+
+# --- Object properties (control) --------------------------------------------
+
+ucof-ctrl:satisfiesRequirement a owl:ObjectProperty ;
+    rdfs:domain ucof-ctrl:ControlMapping ;
+    rdfs:range  ucof-norm:Requirement ;
+    rdfs:label "satisfies requirement" .
+
+ucof-ctrl:implementedBy a owl:ObjectProperty ;
+    rdfs:domain ucof-ctrl:ControlMapping ;
+    rdfs:range  ucof-ctrl:Control ;
+    rdfs:label "implemented by" .
+
+ucof-ctrl:hasMappingType a owl:ObjectProperty ;
+    rdfs:domain ucof-ctrl:ControlMapping ;
+    rdfs:range  ucof:MappingType ;
+    rdfs:label "has mapping type" .
+
+ucof-ctrl:hasImplementationState a owl:ObjectProperty ;
+    rdfs:domain ucof-ctrl:Control ;
+    rdfs:range  ucof:ImplementationState ;
+    rdfs:label "has implementation state" .
+
+ucof-ctrl:hasOwner a owl:ObjectProperty ;
+    rdfs:domain ucof-ctrl:Control ;
+    rdfs:range  ucof-org:Role ;
+    rdfs:label "has owner" .
+
+ucof-ctrl:appliesTo a owl:ObjectProperty ;
+    rdfs:domain ucof-ctrl:Control ;
+    rdfs:range  ucof-org:OrganizationalEntity ;
+    rdfs:label "applies to" .
+
+ucof-ctrl:isSourcedFromNorm a owl:ObjectProperty ;
+    rdfs:domain ucof-ctrl:Control ;
+    rdfs:range  ucof-norm:Norm ;
+    rdfs:label "is sourced from norm" ;
+    rdfs:comment "Links a norm-prescribed control (e.g. ISO 27001 Annex A) to its source norm." .
+
+ucof-ctrl:validatedBy a owl:ObjectProperty ;
+    rdfs:domain ucof-ctrl:ControlMapping ;
+    rdfs:range  ucof-org:Role ;
+    rdfs:label "validated by" .
+
+# --- Datatype properties (control) ------------------------------------------
+
+ucof-ctrl:controlId a owl:DatatypeProperty ;
+    rdfs:domain ucof-ctrl:Control ;
+    rdfs:range  xsd:string ;
+    rdfs:label "control ID" .
+
+ucof-ctrl:controlTitle a owl:DatatypeProperty ;
+    rdfs:domain ucof-ctrl:Control ;
+    rdfs:range  xsd:string ;
+    rdfs:label "control title" .
+
+ucof-ctrl:controlDescription a owl:DatatypeProperty ;
+    rdfs:domain ucof-ctrl:Control ;
+    rdfs:range  xsd:string ;
+    rdfs:label "control description" .
+
+ucof-ctrl:reviewCycleDays a owl:DatatypeProperty ;
+    rdfs:domain ucof-ctrl:Control ;
+    rdfs:range  xsd:integer ;
+    rdfs:label "review cycle (days)" ;
+    rdfs:comment "Number of days between mandatory reviews of this control." .
+
+ucof-ctrl:mappingRationale a owl:DatatypeProperty ;
+    rdfs:domain ucof-ctrl:ControlMapping ;
+    rdfs:range  xsd:string ;
+    rdfs:label "mapping rationale" .
+
+ucof-ctrl:tag a owl:DatatypeProperty ;
+    rdfs:domain ucof-ctrl:Control ;
+    rdfs:range  xsd:string ;
+    rdfs:label "tag" ;
+    rdfs:comment "Semantic label for cross-norm tagging, e.g. 'DocumentControl', 'AI-Oversight', 'Privacy'." .
+
+
+##############################################################################
+# NAMESPACE: ucof-risk  (Risk Management — ISO 31000 aligned)
+##############################################################################
+
+ucof-risk:RiskItem a owl:Class ;
+    rdfs:label "Risk Item" ;
+    rdfs:comment "A potential event or condition that could cause non-conformance, harm, or failure to achieve objectives. Aligned to ISO 31000:2018 risk definition." .
+
+ucof-risk:RiskAndOpportunityItem a owl:Class ;
+    rdfs:label "Risk and Opportunity Item" ;
+    rdfs:comment "A planning record combining downside risks and upside opportunities, used to model risk-based thinking in an integrated way." .
+
+ucof-risk:OpportunityItem a owl:Class ;
+    rdfs:label "Opportunity Item" ;
+    rdfs:comment "A potential condition or action that can improve outcomes, resilience, quality, or efficiency." .
+
+ucof-risk:ProcessOptimizationOpportunity a owl:Class ;
+    rdfs:subClassOf ucof-risk:OpportunityItem ;
+    rdfs:label "Process Optimization Opportunity" ;
+    rdfs:comment "Opportunity to improve process capability, throughput, quality, or cycle time." .
+
+ucof-risk:AutomationOpportunity a owl:Class ;
+    rdfs:subClassOf ucof-risk:OpportunityItem ;
+    rdfs:label "Automation Opportunity" ;
+    rdfs:comment "Opportunity to automate repeatable activities for consistency and efficiency gains." .
+
+ucof-risk:SupplierDiversificationOpportunity a owl:Class ;
+    rdfs:subClassOf ucof-risk:OpportunityItem ;
+    rdfs:label "Supplier Diversification Opportunity" ;
+    rdfs:comment "Opportunity to reduce concentration risk by qualifying alternate suppliers." .
+
+ucof-risk:CustomerExperienceOpportunity a owl:Class ;
+    rdfs:subClassOf ucof-risk:OpportunityItem ;
+    rdfs:label "Customer Experience Opportunity" ;
+    rdfs:comment "Opportunity to improve customer trust, satisfaction, and service reliability." .
+
+ucof-risk:InformationSecurityRisk a owl:Class ;
+    rdfs:subClassOf ucof-risk:RiskItem ;
+    rdfs:label "Information Security Risk" ;
+    rdfs:comment "Risk to confidentiality, integrity, or availability of information assets. ISO 27001 context." .
+
+ucof-risk:AIRisk a owl:Class ;
+    rdfs:subClassOf ucof-risk:RiskItem ;
+    rdfs:label "AI Risk" ;
+    rdfs:comment "Risk arising from the development, deployment, or use of AI systems. ISO 42001 / NIST AI RMF context." .
+
+ucof-risk:BiasRisk a owl:Class ;
+    rdfs:subClassOf ucof-risk:AIRisk ;
+    rdfs:label "Bias Risk" ;
+    rdfs:comment "AI risk category related to unfair, discriminatory, or unrepresentative model outputs. ISO 42001 Annex A." .
+
+ucof-risk:QualityRisk a owl:Class ;
+    rdfs:subClassOf ucof-risk:RiskItem ;
+    rdfs:label "Quality Risk" ;
+    rdfs:comment "Risk to product or service quality objectives. ISO 9001 context." .
+
+ucof-risk:OHSRisk a owl:Class ;
+    rdfs:subClassOf ucof-risk:RiskItem ;
+    rdfs:label "OHS Risk" ;
+    rdfs:comment "Occupational health and safety risk. ISO 45001 extension." .
+
+ucof-risk:EnvironmentalRisk a owl:Class ;
+    rdfs:subClassOf ucof-risk:RiskItem ;
+    rdfs:label "Environmental Risk" ;
+    rdfs:comment "Risk of environmental impact from organizational activities. ISO 14001 extension." .
+
+ucof-risk:PrivacyRisk a owl:Class ;
+    rdfs:subClassOf ucof-risk:RiskItem ;
+    rdfs:label "Privacy Risk" ;
+    rdfs:comment "Risk to personal data protection and data subject rights." .
+
+ucof-risk:RiskAssessment a owl:Class ;
+    rdfs:label "Risk Assessment" ;
+    rdfs:comment "A structured evaluation of risks — identification, analysis, and evaluation — as defined in ISO 31000:2018 Clause 6.4." .
+
+ucof-risk:RiskTreatmentPlan a owl:Class ;
+    rdfs:label "Risk Treatment Plan" ;
+    rdfs:comment "A documented plan specifying how identified risks will be treated. ISO 31000:2018 Clause 6.5." .
+
+ucof-risk:AIImpactAssessment a owl:Class ;
+    rdfs:subClassOf ucof-risk:RiskAssessment ;
+    rdfs:label "AI Impact Assessment" ;
+    skos:altLabel "RiskAssessment (AI impact context)" ;
+    rdfs:comment "Structured assessment of potential impacts of an AI system on individuals, groups, and society. This is a specialization of Risk Assessment and may be referenced using a RiskAssessment alias in AI-specific contexts." .
+
+# --- Object properties (risk) -----------------------------------------------
+
+ucof-risk:hasLikelihood a owl:ObjectProperty ;
+    rdfs:domain ucof-risk:RiskItem ;
+    rdfs:range  ucof:RiskLevel ;
+    rdfs:label "has likelihood" .
+
+ucof-risk:hasImpact a owl:ObjectProperty ;
+    rdfs:domain ucof-risk:RiskItem ;
+    rdfs:range  ucof:RiskLevel ;
+    rdfs:label "has impact" .
+
+ucof-risk:hasTreatmentOption a owl:ObjectProperty ;
+    rdfs:domain ucof-risk:RiskItem ;
+    rdfs:range  ucof:TreatmentOption ;
+    rdfs:label "has treatment option" .
+
+ucof-risk:treatedBy a owl:ObjectProperty ;
+    rdfs:domain ucof-risk:RiskItem ;
+    rdfs:range  ucof-ctrl:Control ;
+    rdfs:label "treated by" ;
+    rdfs:comment "Links a risk to the control(s) that treat it." .
+
+ucof-risk:affectsAsset a owl:ObjectProperty ;
+    rdfs:domain ucof-risk:RiskItem ;
+    rdfs:range  ucof-org:Asset ;
+    rdfs:label "affects asset" .
+
+ucof-risk:identifiedIn a owl:ObjectProperty ;
+    rdfs:domain ucof-risk:RiskItem ;
+    rdfs:range  ucof-risk:RiskAssessment ;
+    rdfs:label "identified in" .
+
+ucof-risk:hasRiskItem a owl:ObjectProperty ;
+    rdfs:domain ucof-risk:RiskAndOpportunityItem ;
+    rdfs:range  ucof-risk:RiskItem ;
+    rdfs:label "has risk item" .
+
+ucof-risk:hasOpportunityItem a owl:ObjectProperty ;
+    rdfs:domain ucof-risk:RiskAndOpportunityItem ;
+    rdfs:range  ucof-risk:OpportunityItem ;
+    rdfs:label "has opportunity item" .
+
+ucof-risk:hasTreatmentPlan a owl:ObjectProperty ;
+    rdfs:domain ucof-risk:RiskItem ;
+    rdfs:range  ucof-risk:RiskTreatmentPlan ;
+    rdfs:label "has treatment plan" .
+
+ucof-risk:assessmentScopeEntity a owl:ObjectProperty ;
+    rdfs:domain ucof-risk:RiskAssessment ;
+    rdfs:range  ucof-org:OrganizationalEntity ;
+    rdfs:label "assessment scope entity" .
+
+ucof-risk:assessmentScopeNorm a owl:ObjectProperty ;
+    rdfs:domain ucof-risk:RiskAssessment ;
+    rdfs:range  ucof-norm:Norm ;
+    rdfs:label "assessment scope norm" .
+
+ucof-risk:assessedAISystem a owl:ObjectProperty ;
+    rdfs:domain ucof-risk:AIImpactAssessment ;
+    rdfs:range  ucof-org:AIModel ;
+    rdfs:label "assessed AI system" .
+
+# --- Datatype properties (risk) ---------------------------------------------
+
+ucof-risk:riskId a owl:DatatypeProperty ;
+    rdfs:domain ucof-risk:RiskItem ;
+    rdfs:range  xsd:string ;
+    rdfs:label "risk ID" .
+
+ucof-risk:riskDescription a owl:DatatypeProperty ;
+    rdfs:domain ucof-risk:RiskItem ;
+    rdfs:range  xsd:string ;
+    rdfs:label "risk description" .
+
+ucof-risk:inherentRiskScore a owl:DatatypeProperty ;
+    rdfs:domain ucof-risk:RiskItem ;
+    rdfs:range  xsd:integer ;
+    rdfs:label "inherent risk score" ;
+    rdfs:comment "Computed pre-treatment score. Typically Likelihood × Impact on a numeric scale." .
+
+ucof-risk:residualRiskScore a owl:DatatypeProperty ;
+    rdfs:domain ucof-risk:RiskItem ;
+    rdfs:range  xsd:integer ;
+    rdfs:label "residual risk score" ;
+    rdfs:comment "Post-treatment risk score after controls are applied." .
+
+ucof-risk:riskOwner a owl:DatatypeProperty ;
+    rdfs:domain ucof-risk:RiskItem ;
+    rdfs:range  xsd:string ;
+    rdfs:label "risk owner" .
+
+ucof-risk:assessmentDate a owl:DatatypeProperty ;
+    rdfs:domain ucof-risk:RiskAssessment ;
+    rdfs:range  xsd:date ;
+    rdfs:label "assessment date" .
+
+ucof-risk:nextReviewDate a owl:DatatypeProperty ;
+    rdfs:domain ucof-risk:RiskAssessment ;
+    rdfs:range  xsd:date ;
+    rdfs:label "next review date" .
+
+
+##############################################################################
+# NAMESPACE: ucof-evid  (Evidence & Audit Vault)
+##############################################################################
+
+ucof-evid:Evidence a owl:Class ;
+    rdfs:label "Evidence" ;
+    rdfs:comment "A record, document, log, or artifact demonstrating a control is implemented and operating effectively." .
+
+ucof-evid:DocumentEvidence a owl:Class ;
+    rdfs:subClassOf ucof-evid:Evidence ;
+    rdfs:label "Document Evidence" ;
+    rdfs:comment "A policy, procedure, plan, or other formal document." .
+
+ucof-evid:LogEvidence a owl:Class ;
+    rdfs:subClassOf ucof-evid:Evidence ;
+    rdfs:label "Log Evidence" ;
+    rdfs:comment "A system log, audit trail, or automated record." .
+
+ucof-evid:TestResultEvidence a owl:Class ;
+    rdfs:subClassOf ucof-evid:Evidence ;
+    rdfs:label "Test Result Evidence" ;
+    rdfs:comment "Output of a technical test, scan, or evaluation (e.g., penetration test, vulnerability scan, model bias evaluation)." .
+
+ucof-evid:InterviewEvidence a owl:Class ;
+    rdfs:subClassOf ucof-evid:Evidence ;
+    rdfs:label "Interview Evidence" ;
+    rdfs:comment "Notes or transcript from an audit interview." .
+
+ucof-evid:ObservationEvidence a owl:Class ;
+    rdfs:subClassOf ucof-evid:Evidence ;
+    rdfs:label "Observation Evidence" ;
+    rdfs:comment "Direct observation of a process or physical control." .
+
+ucof-evid:CertificationEvidence a owl:Class ;
+    rdfs:subClassOf ucof-evid:Evidence ;
+    rdfs:label "Certification Evidence" ;
+    rdfs:comment "A certificate, accreditation, or formal third-party attestation." .
+
+ucof-evid:TrainingRecord a owl:Class ;
+    rdfs:subClassOf ucof-evid:Evidence ;
+    rdfs:label "Training Record" ;
+    rdfs:comment "Record of completion of a training or awareness programme. Relevant to ISO 42001 AI literacy requirements." .
+
+ucof-evid:CompetenceAssessmentRecord a owl:Class ;
+    rdfs:subClassOf ucof-evid:Evidence ;
+    rdfs:label "Competence Assessment Record" ;
+    rdfs:comment "Evidence that competence was evaluated (for example, quizzes, assessments, or practical evaluations) for AI literacy and role readiness." .
+
+ucof-evid:AwarenessCommunicationRecord a owl:Class ;
+    rdfs:subClassOf ucof-evid:Evidence ;
+    rdfs:label "Awareness Communication Record" ;
+    rdfs:comment "Evidence of awareness communication campaigns, briefings, attestations, or policy acknowledgements relevant to AI literacy objectives." .
+
+ucof-evid:AISystemRecord a owl:Class ;
+    rdfs:subClassOf ucof-evid:DocumentEvidence ;
+    rdfs:label "AI System Record" ;
+    rdfs:comment "Structured record documenting an AI system's purpose, design, data, risks, and governance. ISO 42001 Clause 6.1.3 / Annex C." .
+
+ucof-evid:VerificationState a owl:Class ;
+    rdfs:label "Verification State" ;
+    owl:oneOf ( ucof-evid:Unverified ucof-evid:Accepted ucof-evid:Rejected ) .
+
+ucof-evid:Unverified a owl:NamedIndividual, ucof-evid:VerificationState ; rdfs:label "Unverified" .
+ucof-evid:Accepted   a owl:NamedIndividual, ucof-evid:VerificationState ; rdfs:label "Accepted" .
+ucof-evid:Rejected   a owl:NamedIndividual, ucof-evid:VerificationState ; rdfs:label "Rejected" .
+
+# --- Object properties (evidence) -------------------------------------------
+
+ucof-evid:supportsControl a owl:ObjectProperty ;
+    rdfs:domain ucof-evid:Evidence ;
+    rdfs:range  ucof-ctrl:Control ;
+    rdfs:label "supports control" .
+
+ucof-evid:hasVerificationState a owl:ObjectProperty ;
+    rdfs:domain ucof-evid:Evidence ;
+    rdfs:range  ucof-evid:VerificationState ;
+    rdfs:label "has verification state" .
+
+ucof-evid:collectedBy a owl:ObjectProperty ;
+    rdfs:domain ucof-evid:Evidence ;
+    rdfs:range  ucof-org:Role ;
+    rdfs:label "collected by" .
+
+ucof-evid:verifiedBy a owl:ObjectProperty ;
+    rdfs:domain ucof-evid:Evidence ;
+    rdfs:range  ucof-org:Role ;
+    rdfs:label "verified by" .
+
+ucof-evid:documentsAISystem a owl:ObjectProperty ;
+    rdfs:domain ucof-evid:AISystemRecord ;
+    rdfs:range  ucof-org:AIModel ;
+    rdfs:label "documents AI system" .
+
+# --- Datatype properties (evidence) -----------------------------------------
+
+ucof-evid:evidenceId a owl:DatatypeProperty ;
+    rdfs:domain ucof-evid:Evidence ;
+    rdfs:range  xsd:string ;
+    rdfs:label "evidence ID" .
+
+ucof-evid:evidenceTitle a owl:DatatypeProperty ;
+    rdfs:domain ucof-evid:Evidence ;
+    rdfs:range  xsd:string ;
+    rdfs:label "evidence title" .
+
+ucof-evid:evidenceDescription a owl:DatatypeProperty ;
+    rdfs:domain ucof-evid:Evidence ;
+    rdfs:range  xsd:string ;
+    rdfs:label "evidence description" .
+
+ucof-evid:collectedDate a owl:DatatypeProperty ;
+    rdfs:domain ucof-evid:Evidence ;
+    rdfs:range  xsd:date ;
+    rdfs:label "collected date" .
+
+ucof-evid:expiryDate a owl:DatatypeProperty ;
+    rdfs:domain ucof-evid:Evidence ;
+    rdfs:range  xsd:date ;
+    rdfs:label "expiry date" .
+
+ucof-evid:storageRef a owl:DatatypeProperty ;
+    rdfs:domain ucof-evid:Evidence ;
+    rdfs:range  xsd:anyURI ;
+    rdfs:label "storage reference" ;
+    rdfs:comment "URI pointing to the artifact in the evidence vault (S3, SharePoint, etc.)." .
+
+ucof-evid:version a owl:DatatypeProperty ;
+    rdfs:domain ucof-evid:Evidence ;
+    rdfs:range  xsd:string ;
+    rdfs:label "version" .
+
+
+##############################################################################
+# NAMESPACE: ucof-wf  (Certification Workflow)
+##############################################################################
+
+ucof-wf:CertificationProgramme a owl:Class ;
+    rdfs:label "Certification Programme" ;
+    rdfs:comment "A structured effort to achieve or maintain certification against one or more norms, organized into phases, milestones, and tasks." .
+
+ucof-wf:CertificationPhase a owl:Class ;
+    rdfs:label "Certification Phase" ;
+    rdfs:comment "A major stage in the certification lifecycle." ;
+    owl:oneOf (
+        ucof-wf:Planning
+        ucof-wf:GapAnalysis
+        ucof-wf:Remediation
+        ucof-wf:PreAuditReadiness
+        ucof-wf:Stage1Audit
+        ucof-wf:Stage2Audit
+        ucof-wf:CertificationAwarded
+        ucof-wf:SurveillanceAudit
+        ucof-wf:Recertification
+    ) .
+
+ucof-wf:Planning            a owl:NamedIndividual, ucof-wf:CertificationPhase ; rdfs:label "Planning" .
+ucof-wf:GapAnalysis         a owl:NamedIndividual, ucof-wf:CertificationPhase ; rdfs:label "Gap Analysis" .
+ucof-wf:Remediation         a owl:NamedIndividual, ucof-wf:CertificationPhase ; rdfs:label "Remediation" .
+ucof-wf:PreAuditReadiness   a owl:NamedIndividual, ucof-wf:CertificationPhase ; rdfs:label "Pre-Audit Readiness" .
+ucof-wf:Stage1Audit         a owl:NamedIndividual, ucof-wf:CertificationPhase ; rdfs:label "Stage 1 Audit" .
+ucof-wf:Stage2Audit         a owl:NamedIndividual, ucof-wf:CertificationPhase ; rdfs:label "Stage 2 Audit" .
+ucof-wf:CertificationAwarded a owl:NamedIndividual, ucof-wf:CertificationPhase ; rdfs:label "Certification Awarded" .
+ucof-wf:SurveillanceAudit   a owl:NamedIndividual, ucof-wf:CertificationPhase ; rdfs:label "Surveillance Audit" .
+ucof-wf:Recertification     a owl:NamedIndividual, ucof-wf:CertificationPhase ; rdfs:label "Recertification" .
+
+ucof-wf:Milestone a owl:Class ;
+    rdfs:label "Milestone" ;
+    rdfs:comment "A significant compliance goal achieved by completing a group of tasks (e.g., 'Complete initial risk assessment')." .
+
+ucof-wf:Task a owl:Class ;
+    rdfs:label "Task" ;
+    rdfs:comment "A discrete unit of work linked to one or more controls. Has status, assignee, due date, and effort." .
+
+ucof-wf:TaskStatus a owl:Class ;
+    owl:oneOf ( ucof-wf:Open ucof-wf:InProgress ucof-wf:Done ucof-wf:Blocked ucof-wf:Cancelled ) .
+
+ucof-wf:Open      a owl:NamedIndividual, ucof-wf:TaskStatus ; rdfs:label "Open" .
+ucof-wf:InProgress a owl:NamedIndividual, ucof-wf:TaskStatus ; rdfs:label "In Progress" .
+ucof-wf:Done      a owl:NamedIndividual, ucof-wf:TaskStatus ; rdfs:label "Done" .
+ucof-wf:Blocked   a owl:NamedIndividual, ucof-wf:TaskStatus ; rdfs:label "Blocked" .
+ucof-wf:Cancelled a owl:NamedIndividual, ucof-wf:TaskStatus ; rdfs:label "Cancelled" .
+
+ucof-wf:ReviewCycle a owl:Class ;
+    rdfs:label "Review Cycle" ;
+    rdfs:comment "A scheduled or triggered reassessment of controls, risks, or the management system. ISO HLS Clause 9." .
+
+ucof-wf:InternalAudit a owl:Class ;
+    rdfs:subClassOf ucof-wf:ReviewCycle ;
+    rdfs:label "Internal Audit" ;
+    rdfs:comment "Periodic internal audit of the management system. ISO HLS Clause 9.2." .
+
+ucof-wf:ManagementReview a owl:Class ;
+    rdfs:subClassOf ucof-wf:ReviewCycle ;
+    rdfs:label "Management Review" ;
+    rdfs:comment "Periodic top management review of the management system. ISO HLS Clause 9.3." .
+
+ucof-wf:SurveillanceAuditCycle a owl:Class ;
+    rdfs:subClassOf ucof-wf:ReviewCycle ;
+    rdfs:label "Surveillance Audit Cycle" ;
+    rdfs:comment "Annual audit by certification body between recertification cycles." .
+
+ucof-wf:IncidentTriggeredReview a owl:Class ;
+    rdfs:subClassOf ucof-wf:ReviewCycle ;
+    rdfs:label "Incident-Triggered Review" ;
+    rdfs:comment "An unscheduled review triggered by a significant incident or nonconformance." .
+
+ucof-wf:NonConformance a owl:Class ;
+    rdfs:label "Non-Conformance" ;
+    rdfs:comment "A deviation from a requirement, discovered during audit, incident, or self-assessment. ISO HLS Clause 10.2." .
+
+ucof-wf:CorrectiveAction a owl:Class ;
+    rdfs:label "Corrective Action" ;
+    rdfs:comment "A planned response to a NonConformance, addressing root cause to prevent recurrence." .
+
+ucof-wf:GapItem a owl:Class ;
+    rdfs:label "Gap Item" ;
+    rdfs:comment "A requirement identified as unaddressed or partially addressed during gap analysis, prior to remediation." .
+
+ucof-wf:CertificationRecord a owl:Class ;
+    rdfs:label "Certification Record" ;
+    rdfs:comment "The formal record of a certification award: issuing body, scope, certificate number, validity dates." .
+
+# --- Object properties (workflow) -------------------------------------------
+
+ucof-wf:coversNorm a owl:ObjectProperty ;
+    rdfs:domain ucof-wf:CertificationProgramme ;
+    rdfs:range  ucof-norm:Norm ;
+    rdfs:label "covers norm" .
+
+ucof-wf:inScope a owl:ObjectProperty ;
+    rdfs:domain ucof-wf:CertificationProgramme ;
+    rdfs:range  ucof-org:OrganizationalEntity ;
+    rdfs:label "in scope" .
+
+ucof-wf:hasCurrentPhase a owl:ObjectProperty ;
+    rdfs:domain ucof-wf:CertificationProgramme ;
+    rdfs:range  ucof-wf:CertificationPhase ;
+    rdfs:label "has current phase" .
+
+ucof-wf:hasMilestone a owl:ObjectProperty ;
+    rdfs:domain ucof-wf:CertificationProgramme ;
+    rdfs:range  ucof-wf:Milestone ;
+    rdfs:label "has milestone" .
+
+ucof-wf:hasTask a owl:ObjectProperty ;
+    rdfs:domain ucof-wf:Milestone ;
+    rdfs:range  ucof-wf:Task ;
+    rdfs:label "has task" .
+
+ucof-wf:taskAddressesControl a owl:ObjectProperty ;
+    rdfs:domain ucof-wf:Task ;
+    rdfs:range  ucof-ctrl:Control ;
+    rdfs:label "task addresses control" .
+
+ucof-wf:taskAddressesGap a owl:ObjectProperty ;
+    rdfs:domain ucof-wf:Task ;
+    rdfs:range  ucof-wf:GapItem ;
+    rdfs:label "task addresses gap" .
+
+ucof-wf:hasTaskStatus a owl:ObjectProperty ;
+    rdfs:domain ucof-wf:Task ;
+    rdfs:range  ucof-wf:TaskStatus ;
+    rdfs:label "has task status" .
+
+ucof-wf:assignedTo a owl:ObjectProperty ;
+    rdfs:domain ucof-wf:Task ;
+    rdfs:range  ucof-org:Role ;
+    rdfs:label "assigned to" .
+
+ucof-wf:blockedBy a owl:ObjectProperty ;
+    rdfs:domain ucof-wf:Task ;
+    rdfs:range  ucof-wf:Task ;
+    rdfs:label "blocked by" .
+
+ucof-wf:ncLinkedToRequirement a owl:ObjectProperty ;
+    rdfs:domain ucof-wf:NonConformance ;
+    rdfs:range  ucof-norm:Requirement ;
+    rdfs:label "NC linked to requirement" .
+
+ucof-wf:ncLinkedToControl a owl:ObjectProperty ;
+    rdfs:domain ucof-wf:NonConformance ;
+    rdfs:range  ucof-ctrl:Control ;
+    rdfs:label "NC linked to control" .
+
+ucof-wf:hasCorrectiveAction a owl:ObjectProperty ;
+    rdfs:domain ucof-wf:NonConformance ;
+    rdfs:range  ucof-wf:CorrectiveAction ;
+    rdfs:label "has corrective action" .
+
+ucof-wf:hasSeverity a owl:ObjectProperty ;
+    rdfs:domain ucof-wf:NonConformance ;
+    rdfs:range  ucof:Severity ;
+    rdfs:label "has severity" .
+
+ucof-wf:gapForRequirement a owl:ObjectProperty ;
+    rdfs:domain ucof-wf:GapItem ;
+    rdfs:range  ucof-norm:Requirement ;
+    rdfs:label "gap for requirement" .
+
+ucof-wf:certificationFor a owl:ObjectProperty ;
+    rdfs:domain ucof-wf:CertificationRecord ;
+    rdfs:range  ucof-norm:CertifiableNorm ;
+    rdfs:label "certification for" .
+
+# --- Datatype properties (workflow) -----------------------------------------
+
+ucof-wf:programmeId a owl:DatatypeProperty ;
+    rdfs:domain ucof-wf:CertificationProgramme ;
+    rdfs:range  xsd:string ;
+    rdfs:label "programme ID" .
+
+ucof-wf:readinessScore a owl:DatatypeProperty ;
+    rdfs:domain ucof-wf:CertificationProgramme ;
+    rdfs:range  xsd:decimal ;
+    rdfs:label "readiness score" ;
+    rdfs:comment "Computed 0.0–1.0 score representing the proportion of requirements with verified evidence." .
+
+ucof-wf:taskDueDate a owl:DatatypeProperty ;
+    rdfs:domain ucof-wf:Task ;
+    rdfs:range  xsd:date ;
+    rdfs:label "task due date" .
+
+ucof-wf:estimatedEffortHours a owl:DatatypeProperty ;
+    rdfs:domain ucof-wf:Task ;
+    rdfs:range  xsd:decimal ;
+    rdfs:label "estimated effort (hours)" .
+
+ucof-wf:ncId a owl:DatatypeProperty ;
+    rdfs:domain ucof-wf:NonConformance ;
+    rdfs:range  xsd:string ;
+    rdfs:label "NC ID" .
+
+ucof-wf:rootCause a owl:DatatypeProperty ;
+    rdfs:domain ucof-wf:NonConformance ;
+    rdfs:range  xsd:string ;
+    rdfs:label "root cause" .
+
+ucof-wf:discoveredDate a owl:DatatypeProperty ;
+    rdfs:domain ucof-wf:NonConformance ;
+    rdfs:range  xsd:date ;
+    rdfs:label "discovered date" .
+
+ucof-wf:closureDate a owl:DatatypeProperty ;
+    rdfs:domain ucof-wf:NonConformance ;
+    rdfs:range  xsd:date ;
+    rdfs:label "closure date" .
+
+ucof-wf:certificateNumber a owl:DatatypeProperty ;
+    rdfs:domain ucof-wf:CertificationRecord ;
+    rdfs:range  xsd:string ;
+    rdfs:label "certificate number" .
+
+ucof-wf:issuingBody a owl:DatatypeProperty ;
+    rdfs:domain ucof-wf:CertificationRecord ;
+    rdfs:range  xsd:string ;
+    rdfs:label "issuing body" .
+
+ucof-wf:validFrom a owl:DatatypeProperty ;
+    rdfs:domain ucof-wf:CertificationRecord ;
+    rdfs:range  xsd:date ;
+    rdfs:label "valid from" .
+
+ucof-wf:validUntil a owl:DatatypeProperty ;
+    rdfs:domain ucof-wf:CertificationRecord ;
+    rdfs:range  xsd:date ;
+    rdfs:label "valid until" .
+
+
+##############################################################################
+# NAMESPACE: ucof-obs  (Continuous Monitoring & Observation)
+##############################################################################
+
+ucof-obs:MonitoringEvent a owl:Class ;
+    rdfs:label "Monitoring Event" ;
+    rdfs:comment "A system-generated or manually-recorded event signalling a change in compliance posture." .
+
+ucof-obs:EvidenceExpiryAlert a owl:Class ;
+    rdfs:subClassOf ucof-obs:MonitoringEvent ;
+    rdfs:label "Evidence Expiry Alert" ;
+    rdfs:comment "Alert generated when evidence is approaching or has passed its expiry date." .
+
+ucof-obs:NormUpdateAlert a owl:Class ;
+    rdfs:subClassOf ucof-obs:MonitoringEvent ;
+    rdfs:label "Norm Update Alert" ;
+    rdfs:comment "Alert generated when a new version of a loaded norm is detected." .
+
+ucof-obs:IncidentTrigger a owl:Class ;
+    rdfs:subClassOf ucof-obs:MonitoringEvent ;
+    rdfs:label "Incident Trigger" ;
+    rdfs:comment "An event (security incident, quality failure, AI incident) that triggers a review cycle." .
+
+ucof-obs:ControlHealthIndicator a owl:Class ;
+    rdfs:label "Control Health Indicator" ;
+    rdfs:comment "A computed indicator expressing the current operational health of a control: evidence currency, review status, open NCs." .
+
+ucof-obs:RiskIndicator a owl:Class ;
+    rdfs:label "Risk Indicator" ;
+    rdfs:comment "A measurable metric used to monitor risk exposure over time. Relevant to NIST AI RMF MEASURE function." .
+
+ucof-obs:ChangeImpactRecord a owl:Class ;
+    rdfs:label "Change Impact Record" ;
+    rdfs:comment "A record of an organizational change (new system, process change, supplier onboarding) and the controls/requirements potentially affected." .
+
+# --- Object properties (observe) --------------------------------------------
+
+ucof-obs:alertForEvidence a owl:ObjectProperty ;
+    rdfs:domain ucof-obs:EvidenceExpiryAlert ;
+    rdfs:range  ucof-evid:Evidence ;
+    rdfs:label "alert for evidence" .
+
+ucof-obs:alertForNorm a owl:ObjectProperty ;
+    rdfs:domain ucof-obs:NormUpdateAlert ;
+    rdfs:range  ucof-norm:Norm ;
+    rdfs:label "alert for norm" .
+
+ucof-obs:triggersReview a owl:ObjectProperty ;
+    rdfs:domain ucof-obs:IncidentTrigger ;
+    rdfs:range  ucof-wf:ReviewCycle ;
+    rdfs:label "triggers review" .
+
+ucof-obs:indicatorForControl a owl:ObjectProperty ;
+    rdfs:domain ucof-obs:ControlHealthIndicator ;
+    rdfs:range  ucof-ctrl:Control ;
+    rdfs:label "indicator for control" .
+
+ucof-obs:changeAffectsControl a owl:ObjectProperty ;
+    rdfs:domain ucof-obs:ChangeImpactRecord ;
+    rdfs:range  ucof-ctrl:Control ;
+    rdfs:label "change affects control" .
+
+ucof-obs:changeAffectsRequirement a owl:ObjectProperty ;
+    rdfs:domain ucof-obs:ChangeImpactRecord ;
+    rdfs:range  ucof-norm:Requirement ;
+    rdfs:label "change affects requirement" .
+
+# --- Datatype properties (observe) ------------------------------------------
+
+ucof-obs:eventTimestamp a owl:DatatypeProperty ;
+    rdfs:domain ucof-obs:MonitoringEvent ;
+    rdfs:range  xsd:dateTime ;
+    rdfs:label "event timestamp" .
+
+ucof-obs:eventDescription a owl:DatatypeProperty ;
+    rdfs:domain ucof-obs:MonitoringEvent ;
+    rdfs:range  xsd:string ;
+    rdfs:label "event description" .
+
+ucof-obs:evidenceCurrent a owl:DatatypeProperty ;
+    rdfs:domain ucof-obs:ControlHealthIndicator ;
+    rdfs:range  xsd:boolean ;
+    rdfs:label "evidence current" ;
+    rdfs:comment "True if all linked evidence is within its validity period." .
+
+ucof-obs:reviewOverdue a owl:DatatypeProperty ;
+    rdfs:domain ucof-obs:ControlHealthIndicator ;
+    rdfs:range  xsd:boolean ;
+    rdfs:label "review overdue" .
+
+ucof-obs:hasOpenNCs a owl:DatatypeProperty ;
+    rdfs:domain ucof-obs:ControlHealthIndicator ;
+    rdfs:range  xsd:boolean ;
+    rdfs:label "has open NCs" .
+
+ucof-obs:indicatorValue a owl:DatatypeProperty ;
+    rdfs:domain ucof-obs:RiskIndicator ;
+    rdfs:range  xsd:decimal ;
+    rdfs:label "indicator value" .
+
+ucof-obs:indicatorThreshold a owl:DatatypeProperty ;
+    rdfs:domain ucof-obs:RiskIndicator ;
+    rdfs:range  xsd:decimal ;
+    rdfs:label "indicator threshold" .
+
+
+##############################################################################
+# NORM INDIVIDUALS — Representative instances of the target norms
+##############################################################################
+
+ucof-norm:ISO9001-2015 a ucof-norm:CertifiableNorm ;
+    ucof-norm:normId      "iso9001-2015" ;
+    ucof-norm:normTitle   "ISO 9001:2015 Quality Management Systems" ;
+    ucof-norm:normVersion "2015" ;
+    ucof-norm:normDomain  "Quality" ;
+    rdfs:label "ISO 9001:2015" .
+
+ucof-norm:ISO27001-2022 a ucof-norm:CertifiableNorm ;
+    ucof-norm:normId      "iso27001-2022" ;
+    ucof-norm:normTitle   "ISO/IEC 27001:2022 Information Security Management Systems" ;
+    ucof-norm:normVersion "2022" ;
+    ucof-norm:normDomain  "Information Security" ;
+    ucof-norm:supersedes  ucof-norm:ISO27001-2013 ;
+    rdfs:label "ISO/IEC 27001:2022" .
+
+ucof-norm:ISO27001-2013 a ucof-norm:CertifiableNorm ;
+    ucof-norm:normId      "iso27001-2013" ;
+    ucof-norm:normTitle   "ISO/IEC 27001:2013 Information Security Management Systems" ;
+    ucof-norm:normVersion "2013" ;
+    ucof-norm:normDomain  "Information Security" ;
+    rdfs:label "ISO/IEC 27001:2013" .
+
+ucof-norm:ISO22989-2022 a ucof-norm:TerminologyNorm ;
+    ucof-norm:normId      "iso22989-2022" ;
+    ucof-norm:normTitle   "ISO/IEC 22989:2022 Artificial Intelligence Concepts and Terminology" ;
+    ucof-norm:normVersion "2022" ;
+    ucof-norm:normDomain  "AI Terminology" ;
+    rdfs:label "ISO/IEC 22989:2022" .
+
+ucof-norm:ISO42001-2023 a ucof-norm:CertifiableNorm ;
+    ucof-norm:normId      "iso42001-2023" ;
+    ucof-norm:normTitle   "ISO/IEC 42001:2023 Artificial Intelligence Management Systems" ;
+    ucof-norm:normVersion "2023" ;
+    ucof-norm:normDomain  "AI Governance" ;
+    ucof-norm:hasDependency ucof-norm:ISO22989-2022 ;
+    rdfs:label "ISO/IEC 42001:2023" .
+
+ucof-norm:ISO31000-2018 a ucof-norm:GuidanceNorm ;
+    ucof-norm:normId      "iso31000-2018" ;
+    ucof-norm:normTitle   "ISO 31000:2018 Risk Management — Guidelines" ;
+    ucof-norm:normVersion "2018" ;
+    ucof-norm:normDomain  "Risk Management" ;
+    rdfs:label "ISO 31000:2018" .
+
+ucof-norm:NIST-AI-RMF-1-0 a ucof-norm:GuidanceNorm ;
+    ucof-norm:normId      "nist-ai-rmf-1-0" ;
+    ucof-norm:normTitle   "NIST AI Risk Management Framework 1.0" ;
+    ucof-norm:normVersion "1.0" ;
+    ucof-norm:normDomain  "AI Risk Management" ;
+    rdfs:label "NIST AI RMF 1.0" .
+
+# Future norms (declared, not yet loaded with clauses)
+ucof-norm:ISO45001-2018 a ucof-norm:CertifiableNorm ;
+    ucof-norm:normId      "iso45001-2018" ;
+    ucof-norm:normTitle   "ISO 45001:2018 Occupational Health and Safety Management Systems" ;
+    ucof-norm:normVersion "2018" ;
+    ucof-norm:normDomain  "Occupational Health and Safety" ;
+    rdfs:label "ISO 45001:2018" .
+
+ucof-norm:ISO14001-2015 a ucof-norm:CertifiableNorm ;
+    ucof-norm:normId      "iso14001-2015" ;
+    ucof-norm:normTitle   "ISO 14001:2015 Environmental Management Systems" ;
+    ucof-norm:normVersion "2015" ;
+    ucof-norm:normDomain  "Environmental Management" ;
+    rdfs:label "ISO 14001:2015" .
+
+
+##############################################################################
+# HLS CLAUSE INSTANCES — Shared ISO High Level Structure clauses (4–10)
+# These are norm-independent; each CertifiableNorm's HLS requirements
+# instantiate HLSRequirement and point to these clauses.
+##############################################################################
+
+ucof-norm:HLS-Clause4 a ucof-norm:HLSClause ;
+    ucof-norm:clauseId    "4" ;
+    ucof-norm:clauseTitle "Context of the Organization" ;
+    rdfs:label "HLS Clause 4 — Context of the Organization" .
+
+ucof-norm:HLS-Clause4-1 a ucof-norm:HLSClause ;
+    ucof-norm:clauseId    "4.1" ;
+    ucof-norm:clauseTitle "Understanding the organization and its context" ;
+    ucof-norm:hasParentClause ucof-norm:HLS-Clause4 ;
+    rdfs:label "HLS 4.1 — Understanding context" .
+
+ucof-norm:HLS-Clause4-2 a ucof-norm:HLSClause ;
+    ucof-norm:clauseId    "4.2" ;
+    ucof-norm:clauseTitle "Understanding the needs and expectations of interested parties" ;
+    ucof-norm:hasParentClause ucof-norm:HLS-Clause4 ;
+    rdfs:label "HLS 4.2 — Interested parties" .
+
+ucof-norm:HLS-Clause4-3 a ucof-norm:HLSClause ;
+    ucof-norm:clauseId    "4.3" ;
+    ucof-norm:clauseTitle "Determining the scope of the management system" ;
+    ucof-norm:hasParentClause ucof-norm:HLS-Clause4 ;
+    rdfs:label "HLS 4.3 — Scope" .
+
+ucof-norm:HLS-Clause5 a ucof-norm:HLSClause ;
+    ucof-norm:clauseId    "5" ;
+    ucof-norm:clauseTitle "Leadership" ;
+    rdfs:label "HLS Clause 5 — Leadership" .
+
+ucof-norm:HLS-Clause6 a ucof-norm:HLSClause ;
+    ucof-norm:clauseId    "6" ;
+    ucof-norm:clauseTitle "Planning" ;
+    rdfs:label "HLS Clause 6 — Planning" .
+
+ucof-norm:HLS-Clause6-1 a ucof-norm:HLSClause ;
+    ucof-norm:clauseId    "6.1" ;
+    ucof-norm:clauseTitle "Actions to address risks and opportunities" ;
+    ucof-norm:hasParentClause ucof-norm:HLS-Clause6 ;
+    rdfs:label "HLS 6.1 — Risks and opportunities" .
+
+ucof-norm:HLS-Clause7 a ucof-norm:HLSClause ;
+    ucof-norm:clauseId    "7" ;
+    ucof-norm:clauseTitle "Support" ;
+    rdfs:label "HLS Clause 7 — Support" .
+
+ucof-norm:HLS-Clause7-5 a ucof-norm:HLSClause ;
+    ucof-norm:clauseId    "7.5" ;
+    ucof-norm:clauseTitle "Documented information" ;
+    ucof-norm:hasParentClause ucof-norm:HLS-Clause7 ;
+    rdfs:label "HLS 7.5 — Documented information" .
+
+ucof-norm:HLS-Clause8 a ucof-norm:HLSClause ;
+    ucof-norm:clauseId    "8" ;
+    ucof-norm:clauseTitle "Operation" ;
+    rdfs:label "HLS Clause 8 — Operation" .
+
+ucof-norm:HLS-Clause9 a ucof-norm:HLSClause ;
+    ucof-norm:clauseId    "9" ;
+    ucof-norm:clauseTitle "Performance Evaluation" ;
+    rdfs:label "HLS Clause 9 — Performance Evaluation" .
+
+ucof-norm:HLS-Clause9-2 a ucof-norm:HLSClause ;
+    ucof-norm:clauseId    "9.2" ;
+    ucof-norm:clauseTitle "Internal audit" ;
+    ucof-norm:hasParentClause ucof-norm:HLS-Clause9 ;
+    rdfs:label "HLS 9.2 — Internal audit" .
+
+ucof-norm:HLS-Clause9-3 a ucof-norm:HLSClause ;
+    ucof-norm:clauseId    "9.3" ;
+    ucof-norm:clauseTitle "Management review" ;
+    ucof-norm:hasParentClause ucof-norm:HLS-Clause9 ;
+    rdfs:label "HLS 9.3 — Management review" .
+
+ucof-norm:HLS-Clause10 a ucof-norm:HLSClause ;
+    ucof-norm:clauseId    "10" ;
+    ucof-norm:clauseTitle "Improvement" ;
+    rdfs:label "HLS Clause 10 — Improvement" .
+
+ucof-norm:HLS-Clause10-2 a ucof-norm:HLSClause ;
+    ucof-norm:clauseId    "10.2" ;
+    ucof-norm:clauseTitle "Nonconformity and corrective action" ;
+    ucof-norm:hasParentClause ucof-norm:HLS-Clause10 ;
+    rdfs:label "HLS 10.2 — Nonconformity and corrective action" .
+
+
+##############################################################################
+# SAMPLE HLS REQUIREMENT — Documented Information (HLS 7.5)
+# Demonstrates cross-norm consolidation: one HLSRequirement satisfies
+# the documented-information clause across ISO 9001, 27001, and 42001.
+##############################################################################
+
+ucof-norm:HLS-REQ-7-5-DocumentControl a ucof-norm:HLSRequirement ;
+    ucof-norm:requirementId   "hls/7.5/document-control" ;
+    ucof-norm:requirementText "The organization shall control documented information required by the management system and by this document." ;
+    ucof-norm:hasObligationLevel ucof:SHALL ;
+    ucof-norm:derivedFromClause ucof-norm:HLS-Clause7-5 ;
+    rdfs:label "HLS 7.5 — Document Control Requirement" ;
+    rdfs:comment "Shared by ISO 9001:7.5, ISO 27001:7.5, ISO 42001:7.5, ISO 45001:7.5, ISO 14001:7.5. A single Document Control Policy satisfies all." .
+
+# Cross-norm mapping example: ISO 27001 6.1.2 ↔ ISO 42001 6.1 ↔ ISO 31000 6.4
+ucof-norm:XMAP-RiskAssessment-27001-42001 a ucof-norm:CrossNormMapping ;
+    ucof-norm:mappingRationale "Both ISO 27001 Clause 6.1.2 and ISO 42001 Clause 6.1 require a risk assessment process with identification, analysis, and evaluation steps. A single Risk Assessment Procedure can address both when scoped to cover information security risks and AI-specific risks respectively." ;
+    rdfs:label "Cross-mapping: ISO 27001 6.1.2 ↔ ISO 42001 6.1 (Risk Assessment)" .
+
+ucof-norm:XMAP-InternalAudit-HLS a ucof-norm:CrossNormMapping ;
+    ucof-norm:mappingRationale "HLS Clause 9.2 Internal Audit is structurally identical across ISO 9001, 27001, 42001, 45001, and 14001. A single integrated internal audit programme satisfies all norms in scope." ;
+    rdfs:label "Cross-mapping: HLS 9.2 Internal Audit — all HLS norms" .
